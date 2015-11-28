@@ -114,6 +114,20 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 		case "i":
 			this.instructions.visible = !this.instructions.visible;
 			break;
+
+		case "f":
+			var el = this.outerElement;
+
+			if (el.requestFullscreen) {
+				el.requestFullscreen();
+			} else if (el.webkitRequestFullscreen) {
+				el.webkitRequestFullscreen();
+			} else if (el.mozRequestFullScreen) {
+				el.mozRequestFullScreen();
+			} else if (el.msRequestFullscreen) {
+				el.msRequestFullscreen();
+			}
+			break;
 	}
 }
 
