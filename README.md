@@ -17,10 +17,10 @@ http://tunapanda.github.io/pixelchallenge/
 
 The program uses these keys:
 
-* _0-9_ - Show challenge
-* R - Add score for the red team
-* G - Add score for the freen team
-* C - Clear the score
-* B - Show bug
-* I - Toggle instructions
-* F - Go fullscreen
+* __0-9__ - Show challenge
+* __R__ - Add score for the red team
+* __G__ - Add score for the freen team
+* __C__ - Clear the score
+* __B__ - Show bug
+* __I__ - Toggle instructions
+* __F__ - Go fullscreen
