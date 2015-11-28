@@ -11,7 +11,7 @@ function PlusOne() {
 	this.addChild(this.holder);
 
 	this.style = {
-		font: "800 400px Open Sans",
+		font: "800 400px Sans",
 		dropShadow: true,
 		fill: "#ff0000",
 		dropShadowColor: "#000000",

@@ -29857,7 +29857,70 @@ Bug.prototype.play = function() {
 
 	return this.playThenable;
 }
-},{"./ThenableUtil":141,"inherits":8,"pixi.js":113,"tinp":133,"tween.js":134}],136:[function(require,module,exports){
+},{"./ThenableUtil":142,"inherits":8,"pixi.js":113,"tinp":133,"tween.js":134}],136:[function(require,module,exports){
+PIXI = require("pixi.js");
+var inherits = require("inherits");
+
+function Instructions() {
+	PIXI.Container.call(this);
+
+	this.draw();
+}
+
+inherits(Instructions, PIXI.Container);
+module.exports = Instructions;
+
+Instructions.prototype.draw = function() {
+	this.holder = new PIXI.Container();
+	this.addChild(this.holder);
+
+	var instructionDatas = [{
+		label: "FORWARD"
+	}, {
+		label: "TURN LEFT"
+	}, {
+		label: "TURN RIGHT"
+	}, {
+		label: "PUT PIXEL"
+	}];
+
+	for (var i = 0; i < instructionDatas.length; i++) {
+		var instructionData = instructionDatas[i];
+		var card = this.createCard(instructionData);
+
+		card.x = 200 * i;
+		card.y = 500;
+
+		this.holder.addChild(card);
+	}
+}
+
+Instructions.prototype.createCard = function(data) {
+	var card = new PIXI.Container();
+
+	var g = new PIXI.Graphics();
+	g.beginFill(0x8080ff, 1);
+	g.drawRoundedRect(10, 10, 180, 80, 10);
+	card.addChild(g);
+
+	/*var filter = new PIXI.filters.DropShadowFilter();
+	filter.distance = 0;
+	filter.blur = 10;
+	card.filters = [filter];*/
+
+	var style = {
+		font: "800 22px Sans",
+		fill: "#000000",
+	};
+
+	var t = new PIXI.Text(data.label, style);
+	t.x = 100 - t.width / 2;
+	t.y = 36;
+	card.addChild(t);
+
+	return card;
+}
+},{"inherits":8,"pixi.js":113}],137:[function(require,module,exports){
 function ObjectUtil() {}
 
 module.exports = ObjectUtil;
@@ -29870,7 +29933,7 @@ ObjectUtil.clone = function(o) {
 
 	return r;
 }
-},{}],137:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 var RadialShine = require("./RadialShine");
@@ -29954,7 +30017,7 @@ Piece.prototype.setPiece = function(index) {
 	this.x = 400;
 	this.y = 300;
 }
-},{"./RadialShine":140,"inherits":8,"pixi.js":113}],138:[function(require,module,exports){
+},{"./RadialShine":141,"inherits":8,"pixi.js":113}],139:[function(require,module,exports){
 PIXI = require("pixi.js");
 var PixiApp = require("pixiapp");
 var inherits = require("inherits");
@@ -29964,6 +30027,7 @@ var TWEEN = require("tween.js");
 var ObjectUtil = require("./ObjectUtil");
 var PlusOne = require("./PlusOne");
 var Bug = require("./Bug");
+var Instructions = require("./Instructions");
 
 function PixelChallenge() {
 	PixiApp.call(this, 800, 600);
@@ -29991,7 +30055,7 @@ PixelChallenge.prototype.onAssetsLoaded = function() {
 	this.shine.alpha = 0;
 
 	var redStyle = {
-		font: "800 150px Open Sans",
+		font: "800 150px Sans",
 		dropShadow: true,
 		fill: "#ff0000",
 		dropShadowColor: "#000000",
@@ -30016,6 +30080,10 @@ PixelChallenge.prototype.onAssetsLoaded = function() {
 
 	this.bug = new Bug();
 	this.addChild(this.bug);
+
+	this.instructions = new Instructions();
+	this.addChild(this.instructions);
+	this.instructions.visible = false;
 }
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
@@ -30061,6 +30129,10 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 			this.bug.play().then(function() {
 				this.backgroundColor = 0xffffff;
 			}.bind(this));
+			break;
+
+		case "i":
+			this.instructions.visible = !this.instructions.visible;
 			break;
 	}
 }
@@ -30120,7 +30192,7 @@ PixelChallenge.prototype.rotate = function() {
 }
 
 new PixelChallenge();
-},{"./Bug":135,"./ObjectUtil":136,"./Piece":137,"./PlusOne":139,"./RadialShine":140,"inherits":8,"pixi.js":113,"pixiapp":132,"tween.js":134}],139:[function(require,module,exports){
+},{"./Bug":135,"./Instructions":136,"./ObjectUtil":137,"./Piece":138,"./PlusOne":140,"./RadialShine":141,"inherits":8,"pixi.js":113,"pixiapp":132,"tween.js":134}],140:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 var RadialShine = require("./RadialShine");
@@ -30134,7 +30206,7 @@ function PlusOne() {
 	this.addChild(this.holder);
 
 	this.style = {
-		font: "800 400px Open Sans",
+		font: "800 400px Sans",
 		dropShadow: true,
 		fill: "#ff0000",
 		dropShadowColor: "#000000",
@@ -30208,7 +30280,7 @@ PlusOne.prototype.play = function(color) {
 
 	return ThenableUtil.delay(2000);
 }
-},{"./RadialShine":140,"./ThenableUtil":141,"inherits":8,"pixi.js":113,"tween.js":134}],140:[function(require,module,exports){
+},{"./RadialShine":141,"./ThenableUtil":142,"inherits":8,"pixi.js":113,"tween.js":134}],141:[function(require,module,exports){
 var inherits = require('inherits');
 var PIXI = require('pixi.js')
 
@@ -30283,7 +30355,7 @@ RadialShine.prototype.draw = function() {
 
 	this.drawn = true;
 }
-},{"inherits":8,"pixi.js":113}],141:[function(require,module,exports){
+},{"inherits":8,"pixi.js":113}],142:[function(require,module,exports){
 var Thenable = require("tinp");
 
 /**
@@ -30307,4 +30379,4 @@ ThenableUtil.delay = function(millis) {
 
 	return t;
 }
-},{"tinp":133}]},{},[138]);
+},{"tinp":133}]},{},[139]);

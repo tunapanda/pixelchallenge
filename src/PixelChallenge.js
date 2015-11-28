@@ -7,6 +7,7 @@ var TWEEN = require("tween.js");
 var ObjectUtil = require("./ObjectUtil");
 var PlusOne = require("./PlusOne");
 var Bug = require("./Bug");
+var Instructions = require("./Instructions");
 
 function PixelChallenge() {
 	PixiApp.call(this, 800, 600);
@@ -34,7 +35,7 @@ PixelChallenge.prototype.onAssetsLoaded = function() {
 	this.shine.alpha = 0;
 
 	var redStyle = {
-		font: "800 150px Open Sans",
+		font: "800 150px Sans",
 		dropShadow: true,
 		fill: "#ff0000",
 		dropShadowColor: "#000000",
@@ -59,6 +60,10 @@ PixelChallenge.prototype.onAssetsLoaded = function() {
 
 	this.bug = new Bug();
 	this.addChild(this.bug);
+
+	this.instructions = new Instructions();
+	this.addChild(this.instructions);
+	this.instructions.visible = false;
 }
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
@@ -104,6 +109,10 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 			this.bug.play().then(function() {
 				this.backgroundColor = 0xffffff;
 			}.bind(this));
+			break;
+
+		case "i":
+			this.instructions.visible = !this.instructions.visible;
 			break;
 	}
 }
