@@ -4,15 +4,17 @@ var inherits = require("inherits");
 var Piece = require("./Piece");
 var RadialShine = require("./RadialShine");
 var TWEEN = require("tween.js");
+var ObjectUtil = require("./ObjectUtil");
+var PlusOne = require("./PlusOne");
 
 function PixelChallenge() {
-	PixiApp.call(this, 500, 500);
+	PixiApp.call(this, 800, 600);
 
 	window.onkeypress = this.onKeyPress.bind(this);
 
 	this.shine = new RadialShine();
-	this.shine.x = 250;
-	this.shine.y = 250;
+	this.shine.x = 400;
+	this.shine.y = 300;
 	this.addChild(this.shine);
 
 	this.piece = new Piece();
@@ -22,15 +24,72 @@ function PixelChallenge() {
 	this.on("frame", TWEEN.update);
 
 	this.shine.alpha = 0;
+
+	var redStyle = {
+		font: "800 150px Open Sans",
+		dropShadow: true,
+		fill: "#ff0000",
+		dropShadowColor: "#000000",
+		dropShadowDistance: 5,
+		dropShadowAngle: Math.PI / 4,
+		stroke: "#000000",
+		strokeThickness: 5
+	};
+
+	this.redScoreField = new PIXI.Text("0", redStyle);
+	this.addChild(this.redScoreField);
+
+	var greenStyle = ObjectUtil.clone(redStyle);
+	greenStyle.fill = "#00ff00";
+
+	this.greenScoreField = new PIXI.Text("0", greenStyle);
+	this.greenScoreField.x = 800 - this.greenScoreField.width;
+	this.addChild(this.greenScoreField);
+
+	this.plusOne = new PlusOne();
+	this.addChild(this.plusOne);
 }
 
 inherits(PixelChallenge, PixiApp);
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
-	this.targetPiece = parseInt(String.fromCharCode(ev.charCode));
+	var key = String.fromCharCode(ev.charCode).toLowerCase();
 
-	this.count = 100;
-	this.rotate();
+	switch (key) {
+		case "0":
+		case "1":
+		case "2":
+		case "3":
+		case "4":
+		case "5":
+		case "6":
+		case "7":
+		case "8":
+		case "9":
+			this.piece.visible = true;
+			this.targetPiece = parseInt(String.fromCharCode(ev.charCode));
+			this.count = 100;
+			this.rotate();
+			break;
+
+		case "r":
+			this.plusOne.play("red").then(function() {
+				this.redScoreField.text = parseInt(this.redScoreField.text) + 1;
+			}.bind(this));
+			break;
+
+		case "g":
+			this.plusOne.play("green").then(function() {
+				this.greenScoreField.text = parseInt(this.greenScoreField.text) + 1;
+			}.bind(this));
+			break;
+
+		case "c":
+			this.piece.visible = false;
+			this.redScoreField.text = "0";
+			this.greenScoreField.text = "0";
+			break;
+	}
 }
 
 PixelChallenge.prototype.rotate = function() {

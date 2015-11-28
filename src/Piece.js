@@ -78,6 +78,6 @@ Piece.prototype.setPiece = function(index) {
 	this.holder.x = -this.holder.width / 2;
 	this.holder.y = -this.holder.height / 2;
 
-	this.x = 250; // - this.width / 2;
-	this.y = 250; // - this.height / 2;
+	this.x = 400;
+	this.y = 300;
 }

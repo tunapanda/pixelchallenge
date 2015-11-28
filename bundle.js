@@ -28703,6 +28703,225 @@ if (typeof module !== 'undefined') {
 
 }).call(this);
 },{"pixi.js":113}],133:[function(require,module,exports){
+(function (process){
+/**
+ * A subset of Promises/A+.
+ * @class Thenable
+ */
+function Thenable() {
+	if (!(this instanceof Thenable))
+		return new Thenable();
+
+	this.decided = false;
+	this.handlersUsed = false;
+}
+
+/**
+ * Then.
+ * @method resolve
+ */
+Thenable.prototype.then = function(resolutionHandler, rejectionHandler) {
+	if (this.handlersUsed)
+		throw new Error("Handlers already registered or called.");
+
+	this.handlersUsed = true;
+
+	if ((typeof resolutionHandler) == "object" &&
+		resolutionHandler && !rejectionHandler &&
+		resolutionHandler.then) {
+		var chained = resolutionHandler;
+
+		this.resolutionHandler = chained.resolve.bind(chained);
+		this.rejectionHandler = chained.reject.bind(chained);
+		return;
+	}
+
+	/*	if (typeof resolutionHandler == "object" &&
+		}*/
+
+	this.resolutionHandler = resolutionHandler;
+	this.rejectionHandler = rejectionHandler;
+}
+
+/**
+ * Resolve.
+ * @method resolve
+ */
+Thenable.prototype.resolve = function(result) {
+	if (this.decided)
+		throw new Error("Already decided.");
+
+	this.decided = true;
+	process.nextTick(this.callHandler.bind(this, true, result));
+}
+
+/**
+ * Reject.
+ * @method resolve
+ */
+Thenable.prototype.reject = function(reason) {
+	if (this.decided)
+		throw new Error("Already decided.");
+
+	this.decided = true;
+	process.nextTick(this.callHandler.bind(this, false, reason));
+}
+
+/**
+ * Call handler.
+ * @method callHandler
+ * @private
+ */
+Thenable.prototype.callHandler = function(resolved, parameter) {
+	this.handlersUsed = true;
+
+	var handler;
+
+	if (resolved)
+		handler = this.resolutionHandler;
+
+	else
+		handler = this.rejectionHandler;
+
+	//console.log("in callHandler, handler=" + handler);
+
+	if (handler) {
+		try {
+			handler(parameter);
+		} catch (e) {
+			console.error("Unhandled: " + e);
+			console.log(e.stack);
+			throw e;
+		}
+	}
+}
+
+/**
+ * Return a resolved thenable.
+ * @method resolved
+ */
+Thenable.resolved = function(parameter) {
+	var t = new Thenable();
+	t.resolve(parameter);
+	return t;
+}
+
+/**
+ * Return a rejected thenable.
+ * @method rejected
+ */
+Thenable.rejected = function(parameter) {
+	var t = new Thenable();
+	t.reject(parameter);
+	return t;
+}
+
+/**
+ * Wait for all to resolve or any to reject.
+ * @method all
+ */
+Thenable.all = function( /* ... */ ) {
+	var thenable = new Thenable();
+	var i;
+	var thenables = [];
+	var decided = false;
+	var resolvedCount = 0;
+
+	for (i = 0; i < arguments.length; i++)
+		thenables = thenables.concat(arguments[i]);
+
+	if (!thenables.length)
+		return Thenable.resolved();
+
+	function onResolved() {
+		resolvedCount++;
+
+		if (!decided && resolvedCount >= thenables.length) {
+			decided = true;
+			thenable.resolve();
+		}
+	}
+
+	function onRejected(e) {
+		if (!decided) {
+			decided = true;
+			thenable.reject(e);
+		}
+	}
+
+	for (i = 0; i < thenables.length; i++) {
+		if (!thenables[i])
+			onResolved();
+
+		else
+			thenables[i].then(onResolved, onRejected);
+	}
+
+	return thenable;
+}
+
+/**
+ * Wait for any to resolve or all to reject.
+ * @method all
+ */
+Thenable.race = function( /* ... */ ) {
+	var thenable = new Thenable();
+	var i;
+	var thenables = [];
+	var decided = false;
+	var resolvedCount = 0;
+
+	for (i = 0; i < arguments.length; i++)
+		thenables = thenables.concat(arguments[i]);
+
+	function onRejected() {
+		resolvedCount++;
+
+		if (!decided && resolvedCount >= thenables.length) {
+			decided = true;
+			thenable.reject();
+		}
+	}
+
+	function onResolved(r) {
+		if (!decided) {
+			decided = true;
+			thenable.resolve(r);
+		}
+	}
+
+	for (i = 0; i < thenables.length; i++) {
+		thenables[i].then(onResolved, onRejected);
+	}
+
+	return thenable;
+}
+
+/**
+ * Create a resolved Thenable.
+ * @method resolved
+ */
+Thenable.resolved = function(result) {
+	var t = new Thenable;
+	t.resolve(result);
+
+	return t;
+}
+
+/**
+ * Create a rejected Thenable.
+ * @method rejected
+ */
+Thenable.rejected = function(reason) {
+	var t = new Thenable;
+	t.reject(reason);
+
+	return t;
+}
+
+module.exports = Thenable;
+}).call(this,require('_process'))
+},{"_process":2}],134:[function(require,module,exports){
 /**
  * Tween.js - Licensed under the MIT license
  * https://github.com/tweenjs/tween.js
@@ -29578,7 +29797,20 @@ TWEEN.Interpolation = {
 
 })(this);
 
-},{}],134:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
+function ObjectUtil() {}
+
+module.exports = ObjectUtil;
+
+ObjectUtil.clone = function(o) {
+	var r = {};
+
+	for (k in o)
+		r[k] = o[k];
+
+	return r;
+}
+},{}],136:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 var RadialShine = require("./RadialShine");
@@ -29659,25 +29891,27 @@ Piece.prototype.setPiece = function(index) {
 	this.holder.x = -this.holder.width / 2;
 	this.holder.y = -this.holder.height / 2;
 
-	this.x = 250; // - this.width / 2;
-	this.y = 250; // - this.height / 2;
+	this.x = 400;
+	this.y = 300;
 }
-},{"./RadialShine":136,"inherits":8,"pixi.js":113}],135:[function(require,module,exports){
+},{"./RadialShine":139,"inherits":8,"pixi.js":113}],137:[function(require,module,exports){
 PIXI = require("pixi.js");
 var PixiApp = require("pixiapp");
 var inherits = require("inherits");
 var Piece = require("./Piece");
 var RadialShine = require("./RadialShine");
 var TWEEN = require("tween.js");
+var ObjectUtil = require("./ObjectUtil");
+var PlusOne = require("./PlusOne");
 
 function PixelChallenge() {
-	PixiApp.call(this, 500, 500);
+	PixiApp.call(this, 800, 600);
 
 	window.onkeypress = this.onKeyPress.bind(this);
 
 	this.shine = new RadialShine();
-	this.shine.x = 250;
-	this.shine.y = 250;
+	this.shine.x = 400;
+	this.shine.y = 300;
 	this.addChild(this.shine);
 
 	this.piece = new Piece();
@@ -29687,15 +29921,72 @@ function PixelChallenge() {
 	this.on("frame", TWEEN.update);
 
 	this.shine.alpha = 0;
+
+	var redStyle = {
+		font: "800 150px Open Sans",
+		dropShadow: true,
+		fill: "#ff0000",
+		dropShadowColor: "#000000",
+		dropShadowDistance: 5,
+		dropShadowAngle: Math.PI / 4,
+		stroke: "#000000",
+		strokeThickness: 5
+	};
+
+	this.redScoreField = new PIXI.Text("0", redStyle);
+	this.addChild(this.redScoreField);
+
+	var greenStyle = ObjectUtil.clone(redStyle);
+	greenStyle.fill = "#00ff00";
+
+	this.greenScoreField = new PIXI.Text("0", greenStyle);
+	this.greenScoreField.x = 800 - this.greenScoreField.width;
+	this.addChild(this.greenScoreField);
+
+	this.plusOne = new PlusOne();
+	this.addChild(this.plusOne);
 }
 
 inherits(PixelChallenge, PixiApp);
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
-	this.targetPiece = parseInt(String.fromCharCode(ev.charCode));
+	var key = String.fromCharCode(ev.charCode).toLowerCase();
 
-	this.count = 100;
-	this.rotate();
+	switch (key) {
+		case "0":
+		case "1":
+		case "2":
+		case "3":
+		case "4":
+		case "5":
+		case "6":
+		case "7":
+		case "8":
+		case "9":
+			this.piece.visible = true;
+			this.targetPiece = parseInt(String.fromCharCode(ev.charCode));
+			this.count = 100;
+			this.rotate();
+			break;
+
+		case "r":
+			this.plusOne.play("red").then(function() {
+				this.redScoreField.text = parseInt(this.redScoreField.text) + 1;
+			}.bind(this));
+			break;
+
+		case "g":
+			this.plusOne.play("green").then(function() {
+				this.greenScoreField.text = parseInt(this.greenScoreField.text) + 1;
+			}.bind(this));
+			break;
+
+		case "c":
+			this.piece.visible = false;
+			this.redScoreField.text = "0";
+			this.greenScoreField.text = "0";
+			break;
+	}
 }
 
 PixelChallenge.prototype.rotate = function() {
@@ -29753,7 +30044,95 @@ PixelChallenge.prototype.rotate = function() {
 }
 
 new PixelChallenge();
-},{"./Piece":134,"./RadialShine":136,"inherits":8,"pixi.js":113,"pixiapp":132,"tween.js":133}],136:[function(require,module,exports){
+},{"./ObjectUtil":135,"./Piece":136,"./PlusOne":138,"./RadialShine":139,"inherits":8,"pixi.js":113,"pixiapp":132,"tween.js":134}],138:[function(require,module,exports){
+PIXI = require("pixi.js");
+var inherits = require("inherits");
+var RadialShine = require("./RadialShine");
+var TWEEN = require("tween.js");
+var ThenableUtil = require("./ThenableUtil");
+
+function PlusOne() {
+	PIXI.Container.call(this);
+
+	this.holder = new PIXI.Container();
+	this.addChild(this.holder);
+
+	this.style = {
+		font: "800 400px Open Sans",
+		dropShadow: true,
+		fill: "#ff0000",
+		dropShadowColor: "#000000",
+		dropShadowDistance: 5,
+		dropShadowAngle: Math.PI / 4,
+		stroke: "#000000",
+		strokeThickness: 5
+	};
+
+	this.textField = new PIXI.Text("+1", this.style);
+	this.textField.x = -this.textField.width / 2;
+	this.textField.y = -this.textField.height / 2;
+	this.holder.addChild(this.textField);
+
+	this.x = 400;
+	this.y = 300;
+	this.visible = false;
+
+
+}
+
+inherits(PlusOne, PIXI.Container);
+module.exports = PlusOne;
+
+PlusOne.prototype.play = function(color) {
+	switch (color) {
+		case "red":
+			this.targetX = 40;
+			this.style.fill = "#ff0000";
+			break;
+
+		case "green":
+			this.targetX = 760;
+			this.style.fill = "#00ff00";
+			break;
+	}
+
+	this.textField.setStyle(this.style);
+
+	this.visible = true;
+	this.x = 400;
+	this.y = 300;
+
+	this.scale.x = 0;
+	this.scale.y = 0;
+	var tween = new TWEEN.Tween(this.scale);
+	tween.to({
+		x: 1,
+		y: 1,
+	}, 1000);
+	tween.easing(TWEEN.Easing.Elastic.Out);
+	tween.start();
+
+	setTimeout(function() {
+		var tween = new TWEEN.Tween(this);
+		tween.to({
+			x: this.targetX,
+			y: 80,
+		}, 1000);
+		tween.easing(TWEEN.Easing.Quadratic.InOut);
+		tween.start();
+
+		var tween = new TWEEN.Tween(this.scale);
+		tween.to({
+			x: 0,
+			y: 0,
+		}, 1000);
+		tween.easing(TWEEN.Easing.Quadratic.InOut);
+		tween.start();
+	}.bind(this), 1000);
+
+	return ThenableUtil.delay(2000);
+}
+},{"./RadialShine":139,"./ThenableUtil":140,"inherits":8,"pixi.js":113,"tween.js":134}],139:[function(require,module,exports){
 var inherits = require('inherits');
 var PIXI = require('pixi.js')
 
@@ -29828,4 +30207,28 @@ RadialShine.prototype.draw = function() {
 
 	this.drawn = true;
 }
-},{"inherits":8,"pixi.js":113}]},{},[135]);
+},{"inherits":8,"pixi.js":113}],140:[function(require,module,exports){
+var Thenable = require("tinp");
+
+/**
+ * Thenable utilities.
+ * @class ThenableUtil
+ */
+function ThenableUtil() {};
+module.exports = ThenableUtil;
+
+/**
+ * Resolve thenable after specified number of millisecs.
+ * @method delay
+ * @static
+ */
+ThenableUtil.delay = function(millis) {
+	var t = new Thenable();
+
+	setTimeout(function() {
+		t.resolve();
+	}, millis);
+
+	return t;
+}
+},{"tinp":133}]},{},[137]);
