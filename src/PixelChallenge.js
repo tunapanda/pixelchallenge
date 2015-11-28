@@ -6,10 +6,20 @@ var RadialShine = require("./RadialShine");
 var TWEEN = require("tween.js");
 var ObjectUtil = require("./ObjectUtil");
 var PlusOne = require("./PlusOne");
+var Bug = require("./Bug");
 
 function PixelChallenge() {
 	PixiApp.call(this, 800, 600);
 
+	this.on("frame", TWEEN.update);
+
+	PIXI.loader.add("warning.png");
+	PIXI.loader.load(this.onAssetsLoaded.bind(this));
+}
+
+inherits(PixelChallenge, PixiApp);
+
+PixelChallenge.prototype.onAssetsLoaded = function() {
 	window.onkeypress = this.onKeyPress.bind(this);
 
 	this.shine = new RadialShine();
@@ -20,8 +30,6 @@ function PixelChallenge() {
 	this.piece = new Piece();
 	this.addChild(this.piece);
 	this.piece.setPiece(0);
-
-	this.on("frame", TWEEN.update);
 
 	this.shine.alpha = 0;
 
@@ -48,9 +56,10 @@ function PixelChallenge() {
 
 	this.plusOne = new PlusOne();
 	this.addChild(this.plusOne);
-}
 
-inherits(PixelChallenge, PixiApp);
+	this.bug = new Bug();
+	this.addChild(this.bug);
+}
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
 	var key = String.fromCharCode(ev.charCode).toLowerCase();
@@ -88,6 +97,13 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 			this.piece.visible = false;
 			this.redScoreField.text = "0";
 			this.greenScoreField.text = "0";
+			break;
+
+		case "b":
+			this.backgroundColor = 0xff8080;
+			this.bug.play().then(function() {
+				this.backgroundColor = 0xffffff;
+			}.bind(this));
 			break;
 	}
 }

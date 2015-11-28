@@ -29798,6 +29798,66 @@ TWEEN.Interpolation = {
 })(this);
 
 },{}],135:[function(require,module,exports){
+PIXI = require("pixi.js");
+var inherits = require("inherits");
+var TWEEN = require("tween.js");
+var ThenableUtil = require("./ThenableUtil");
+var Thenable = require("tinp");
+
+function Bug() {
+	PIXI.Container.call(this);
+
+	/*var s = PIXI.Sprite.fromFrame("warning.png");
+	this.addChild(s);*/
+
+	this.holder = new PIXI.Container();
+	this.addChild(this.holder);
+
+	var s = PIXI.Sprite.fromImage("warning.png");
+	this.holder.addChild(s);
+
+	s.x = -s.width / 2;
+	s.y = -s.height / 2;
+
+	this.x = 400;
+	this.y = 300;
+
+	this.visible = false;
+}
+
+inherits(Bug, PIXI.Container);
+module.exports = Bug;
+
+Bug.prototype.play = function() {
+	this.playThenable = new Thenable();
+
+	this.visible = true;
+
+	this.scale.x = 0;
+	this.scale.y = 0;
+	var tween = new TWEEN.Tween(this.scale);
+	tween.to({
+		x: 1,
+		y: 1,
+	}, 1000);
+	tween.easing(TWEEN.Easing.Elastic.Out);
+	tween.start();
+
+	var count = 0;
+	var interval = setInterval(function() {
+		count++;
+		this.visible = !this.visible;
+
+		if (count >= 10) {
+			clearInterval(interval);
+			this.visible = false;
+			this.playThenable.resolve();
+		}
+	}.bind(this), 500);
+
+	return this.playThenable;
+}
+},{"./ThenableUtil":141,"inherits":8,"pixi.js":113,"tinp":133,"tween.js":134}],136:[function(require,module,exports){
 function ObjectUtil() {}
 
 module.exports = ObjectUtil;
@@ -29810,7 +29870,7 @@ ObjectUtil.clone = function(o) {
 
 	return r;
 }
-},{}],136:[function(require,module,exports){
+},{}],137:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 var RadialShine = require("./RadialShine");
@@ -29894,7 +29954,7 @@ Piece.prototype.setPiece = function(index) {
 	this.x = 400;
 	this.y = 300;
 }
-},{"./RadialShine":139,"inherits":8,"pixi.js":113}],137:[function(require,module,exports){
+},{"./RadialShine":140,"inherits":8,"pixi.js":113}],138:[function(require,module,exports){
 PIXI = require("pixi.js");
 var PixiApp = require("pixiapp");
 var inherits = require("inherits");
@@ -29903,10 +29963,20 @@ var RadialShine = require("./RadialShine");
 var TWEEN = require("tween.js");
 var ObjectUtil = require("./ObjectUtil");
 var PlusOne = require("./PlusOne");
+var Bug = require("./Bug");
 
 function PixelChallenge() {
 	PixiApp.call(this, 800, 600);
 
+	this.on("frame", TWEEN.update);
+
+	PIXI.loader.add("warning.png");
+	PIXI.loader.load(this.onAssetsLoaded.bind(this));
+}
+
+inherits(PixelChallenge, PixiApp);
+
+PixelChallenge.prototype.onAssetsLoaded = function() {
 	window.onkeypress = this.onKeyPress.bind(this);
 
 	this.shine = new RadialShine();
@@ -29917,8 +29987,6 @@ function PixelChallenge() {
 	this.piece = new Piece();
 	this.addChild(this.piece);
 	this.piece.setPiece(0);
-
-	this.on("frame", TWEEN.update);
 
 	this.shine.alpha = 0;
 
@@ -29945,9 +30013,10 @@ function PixelChallenge() {
 
 	this.plusOne = new PlusOne();
 	this.addChild(this.plusOne);
-}
 
-inherits(PixelChallenge, PixiApp);
+	this.bug = new Bug();
+	this.addChild(this.bug);
+}
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
 	var key = String.fromCharCode(ev.charCode).toLowerCase();
@@ -29985,6 +30054,13 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 			this.piece.visible = false;
 			this.redScoreField.text = "0";
 			this.greenScoreField.text = "0";
+			break;
+
+		case "b":
+			this.backgroundColor = 0xff8080;
+			this.bug.play().then(function() {
+				this.backgroundColor = 0xffffff;
+			}.bind(this));
 			break;
 	}
 }
@@ -30044,7 +30120,7 @@ PixelChallenge.prototype.rotate = function() {
 }
 
 new PixelChallenge();
-},{"./ObjectUtil":135,"./Piece":136,"./PlusOne":138,"./RadialShine":139,"inherits":8,"pixi.js":113,"pixiapp":132,"tween.js":134}],138:[function(require,module,exports){
+},{"./Bug":135,"./ObjectUtil":136,"./Piece":137,"./PlusOne":139,"./RadialShine":140,"inherits":8,"pixi.js":113,"pixiapp":132,"tween.js":134}],139:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 var RadialShine = require("./RadialShine");
@@ -30132,7 +30208,7 @@ PlusOne.prototype.play = function(color) {
 
 	return ThenableUtil.delay(2000);
 }
-},{"./RadialShine":139,"./ThenableUtil":140,"inherits":8,"pixi.js":113,"tween.js":134}],139:[function(require,module,exports){
+},{"./RadialShine":140,"./ThenableUtil":141,"inherits":8,"pixi.js":113,"tween.js":134}],140:[function(require,module,exports){
 var inherits = require('inherits');
 var PIXI = require('pixi.js')
 
@@ -30207,7 +30283,7 @@ RadialShine.prototype.draw = function() {
 
 	this.drawn = true;
 }
-},{"inherits":8,"pixi.js":113}],140:[function(require,module,exports){
+},{"inherits":8,"pixi.js":113}],141:[function(require,module,exports){
 var Thenable = require("tinp");
 
 /**
@@ -30231,4 +30307,4 @@ ThenableUtil.delay = function(millis) {
 
 	return t;
 }
-},{"tinp":133}]},{},[137]);
+},{"tinp":133}]},{},[138]);
