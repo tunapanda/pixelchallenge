@@ -15,13 +15,13 @@ Instructions.prototype.draw = function() {
 	this.addChild(this.holder);
 
 	var instructionDatas = [{
-		label: "FORWARD"
+		label: "PUT ONE PIXEL"
+	}, {
+		label: "WALK ONE STEP"
 	}, {
 		label: "TURN LEFT"
 	}, {
 		label: "TURN RIGHT"
-	}, {
-		label: "PUT PIXEL"
 	}];
 
 	for (var i = 0; i < instructionDatas.length; i++) {
@@ -49,13 +49,13 @@ Instructions.prototype.createCard = function(data) {
 	card.filters = [filter];*/
 
 	var style = {
-		font: "800 22px Sans",
+		font: "800 18px Sans",
 		fill: "#000000",
 	};
 
 	var t = new PIXI.Text(data.label, style);
 	t.x = 100 - t.width / 2;
-	t.y = 36;
+	t.y = 38;
 	card.addChild(t);
 
 	return card;

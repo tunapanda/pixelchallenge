@@ -29798,6 +29798,160 @@ TWEEN.Interpolation = {
 })(this);
 
 },{}],135:[function(require,module,exports){
+/**
+ * AS3/jquery style event dispatcher. Slightly modified. The
+ * jquery style on/off/trigger style of adding listeners is
+ * currently the preferred one.
+ *
+ * The on method for adding listeners takes an extra parameter which is the
+ * scope in which listeners should be called. So this:
+ *
+ *     object.on("event", listener, this);
+ *
+ * Has the same function when adding events as:
+ *
+ *     object.on("event", listener.bind(this));
+ *
+ * However, the difference is that if we use the second method it
+ * will not be possible to remove the listeners later, unless
+ * the closure created by bind is stored somewhere. If the
+ * first method is used, we can remove the listener with:
+ *
+ *     object.off("event", listener, this);
+ *
+ * @class EventDispatcher
+ */
+function EventDispatcher() {
+	this.listenerMap = {};
+}
+
+/**
+ * Add event listener.
+ * @method addEventListener
+ */
+EventDispatcher.prototype.addEventListener = function(eventType, listener, scope) {
+	if (!this.listenerMap)
+		this.listenerMap = {};
+
+	if (!eventType)
+		throw new Error("Event type required for event dispatcher");
+
+	if (!listener)
+		throw new Error("Listener required for event dispatcher");
+
+	this.removeEventListener(eventType, listener, scope);
+
+	if (!this.listenerMap.hasOwnProperty(eventType))
+		this.listenerMap[eventType] = [];
+
+	this.listenerMap[eventType].push({
+		listener: listener,
+		scope: scope
+	});
+}
+
+/**
+ * Remove event listener.
+ * @method removeEventListener
+ */
+EventDispatcher.prototype.removeEventListener = function(eventType, listener, scope) {
+	if (!this.listenerMap)
+		this.listenerMap = {};
+
+	if (!this.listenerMap.hasOwnProperty(eventType))
+		return;
+
+	var listeners = this.listenerMap[eventType];
+
+	for (var i = 0; i < listeners.length; i++) {
+		var listenerObj = listeners[i];
+
+		if (listener == listenerObj.listener && scope == listenerObj.scope) {
+			listeners.splice(i, 1);
+			i--;
+		}
+	}
+
+	if (!listeners.length)
+		delete this.listenerMap[eventType];
+}
+
+/**
+ * Dispatch event.
+ * @method dispatchEvent
+ */
+EventDispatcher.prototype.dispatchEvent = function(event /* ... */ ) {
+	if (!this.listenerMap)
+		this.listenerMap = {};
+
+	var eventType;
+	var listenerParams;
+
+	if (typeof event == "string") {
+		eventType = event;
+
+		if (arguments.length > 1)
+			listenerParams = Array.prototype.slice.call(arguments, 1);
+
+		else listenerParams = [{
+			type: eventType,
+			target: this
+		}];
+	} else {
+		eventType = event.type;
+		event.target = this;
+		listenerParams = [event];
+	}
+
+	if (!this.listenerMap.hasOwnProperty(eventType))
+		return;
+
+	var map = [];
+	for (var i = 0; i < this.listenerMap[eventType].length; i++)
+		map.push(this.listenerMap[eventType][i])
+
+	for (var i = 0; i < map.length; i++) {
+		var listenerObj = map[i];
+		listenerObj.listener.apply(listenerObj.scope, listenerParams);
+	}
+}
+
+/**
+ * Jquery style alias for addEventListener
+ * @method on
+ */
+EventDispatcher.prototype.on = EventDispatcher.prototype.addEventListener;
+
+/**
+ * Jquery style alias for removeEventListener
+ * @method off
+ */
+EventDispatcher.prototype.off = EventDispatcher.prototype.removeEventListener;
+
+/**
+ * Jquery style alias for dispatchEvent
+ * @method trigger
+ */
+EventDispatcher.prototype.trigger = EventDispatcher.prototype.dispatchEvent;
+
+/**
+ * Make something an event dispatcher. Can be used for multiple inheritance.
+ * @method init
+ * @static
+ */
+EventDispatcher.init = function(cls) {
+	cls.prototype.addEventListener = EventDispatcher.prototype.addEventListener;
+	cls.prototype.removeEventListener = EventDispatcher.prototype.removeEventListener;
+	cls.prototype.dispatchEvent = EventDispatcher.prototype.dispatchEvent;
+	cls.prototype.on = EventDispatcher.prototype.on;
+	cls.prototype.off = EventDispatcher.prototype.off;
+	cls.prototype.trigger = EventDispatcher.prototype.trigger;
+}
+
+if (typeof module !== 'undefined') {
+	module.exports = EventDispatcher;
+}
+},{}],136:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 var TWEEN = require("tween.js");
@@ -29857,7 +30011,108 @@ Bug.prototype.play = function() {
 
 	return this.playThenable;
 }
-},{"./ThenableUtil":142,"inherits":8,"pixi.js":113,"tinp":133,"tween.js":134}],136:[function(require,module,exports){
+},{"./ThenableUtil":144,"inherits":8,"pixi.js":113,"tinp":133,"tween.js":134}],137:[function(require,module,exports){
+var PIXI = require("pixi.js");
+var inherits = require("inherits");
+var EventDispatcher = require("yaed");
+
+/**
+ * A text that counts down.
+ * @class CountdownText
+ */
+function CountdownText(text, style) {
+	PIXI.Text.call(this, text, style);
+
+	this.timeLeft = 0;
+	this.timerInterval = null;
+	this.setText(text);
+}
+
+inherits(CountdownText, PIXI.Text);
+EventDispatcher.init(CountdownText);
+
+/**
+ * Override the setText function.
+ * @method setText
+ */
+CountdownText.prototype.setText = function(text) {
+	this.format = text;
+
+	this.updateFormattedText();
+}
+
+/**
+ * Update the actual text.
+ * @method updateFormattedText
+ */
+CountdownText.prototype.updateFormattedText = function() {
+	var s = (this.timeLeft % 60).toString();
+	var m = (Math.floor(this.timeLeft / 60) % 60).toString();
+	var h = (Math.floor(this.timeLeft / (60 * 60))).toString();
+
+	if (s.length < 2)
+		s = "0" + s;
+
+	if (m.length < 2)
+		m = "0" + m;
+
+	if (h == "0")
+		h = "";
+
+	else {
+		if (h.length < 2)
+			h = "0" + h;
+
+		h += ":";
+	}
+
+	var text = this.format.toString().replace("%t", h + m + ":" + s);
+
+	//console.log("update text: " + text);
+
+	PIXI.Text.prototype.setText.call(this, text);
+}
+
+/**
+ * Set time left.
+ * @method setTimeLeft
+ */
+CountdownText.prototype.setTimeLeft = function(timeLeft) {
+	if (timeLeft < 0 || isNaN(timeLeft) || timeLeft === null)
+		timeLeft = 0;
+
+	if (this.timerInterval) {
+		clearInterval(this.timerInterval);
+		this.timerInterval = null;
+	}
+
+	this.timeLeft = timeLeft;
+
+	if (this.timeLeft > 0) {
+		this.timerInterval = setInterval(this.onTimerInterval.bind(this), 1000);
+	}
+
+	this.updateFormattedText();
+}
+
+/**
+ * Timer interval.
+ * @method onTimerInterval
+ */
+CountdownText.prototype.onTimerInterval = function() {
+	this.timeLeft--;
+
+	if (this.timeLeft <= 0) {
+		clearInterval(this.timerInterval);
+		this.timerInterval = null;
+		this.trigger("complete");
+	}
+
+	this.updateFormattedText();
+}
+
+module.exports = CountdownText;
+},{"inherits":8,"pixi.js":113,"yaed":135}],138:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 
@@ -29875,13 +30130,13 @@ Instructions.prototype.draw = function() {
 	this.addChild(this.holder);
 
 	var instructionDatas = [{
-		label: "FORWARD"
+		label: "PUT ONE PIXEL"
+	}, {
+		label: "WALK ONE STEP"
 	}, {
 		label: "TURN LEFT"
 	}, {
 		label: "TURN RIGHT"
-	}, {
-		label: "PUT PIXEL"
 	}];
 
 	for (var i = 0; i < instructionDatas.length; i++) {
@@ -29909,18 +30164,18 @@ Instructions.prototype.createCard = function(data) {
 	card.filters = [filter];*/
 
 	var style = {
-		font: "800 22px Sans",
+		font: "800 18px Sans",
 		fill: "#000000",
 	};
 
 	var t = new PIXI.Text(data.label, style);
 	t.x = 100 - t.width / 2;
-	t.y = 36;
+	t.y = 38;
 	card.addChild(t);
 
 	return card;
 }
-},{"inherits":8,"pixi.js":113}],137:[function(require,module,exports){
+},{"inherits":8,"pixi.js":113}],139:[function(require,module,exports){
 function ObjectUtil() {}
 
 module.exports = ObjectUtil;
@@ -29933,7 +30188,7 @@ ObjectUtil.clone = function(o) {
 
 	return r;
 }
-},{}],138:[function(require,module,exports){
+},{}],140:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 var RadialShine = require("./RadialShine");
@@ -30017,7 +30272,7 @@ Piece.prototype.setPiece = function(index) {
 	this.x = 400;
 	this.y = 300;
 }
-},{"./RadialShine":141,"inherits":8,"pixi.js":113}],139:[function(require,module,exports){
+},{"./RadialShine":143,"inherits":8,"pixi.js":113}],141:[function(require,module,exports){
 PIXI = require("pixi.js");
 var PixiApp = require("pixiapp");
 var inherits = require("inherits");
@@ -30028,6 +30283,7 @@ var ObjectUtil = require("./ObjectUtil");
 var PlusOne = require("./PlusOne");
 var Bug = require("./Bug");
 var Instructions = require("./Instructions");
+var CountDownText = require("./CountDownText");
 
 function PixelChallenge() {
 	PixiApp.call(this, 800, 600);
@@ -30084,6 +30340,21 @@ PixelChallenge.prototype.onAssetsLoaded = function() {
 	this.instructions = new Instructions();
 	this.addChild(this.instructions);
 	this.instructions.visible = false;
+
+	var style = {
+		font: "800 100px Sans",
+		fill: "#4040ff"
+	}
+
+	this.countDownText = new CountDownText("%t", style);
+	this.countDownText.visible = false;
+	this.countDownText.x = 400 - this.countDownText.width / 2;
+	this.countDownText.y = 400;
+	this.addChild(this.countDownText);
+
+	this.countDownText.on("complete", function() {
+		this.countDownText.visible = false;
+	}.bind(this));
 }
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
@@ -30148,6 +30419,15 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 				el.msRequestFullscreen();
 			}
 			break;
+
+		case "t":
+			this.countDownText.setTimeLeft(5);
+			this.countDownText.visible = true;
+			break;
+
+		case "u":
+			this.countDownText.visible = false;
+			break;
 	}
 }
 
@@ -30206,7 +30486,7 @@ PixelChallenge.prototype.rotate = function() {
 }
 
 new PixelChallenge();
-},{"./Bug":135,"./Instructions":136,"./ObjectUtil":137,"./Piece":138,"./PlusOne":140,"./RadialShine":141,"inherits":8,"pixi.js":113,"pixiapp":132,"tween.js":134}],140:[function(require,module,exports){
+},{"./Bug":136,"./CountDownText":137,"./Instructions":138,"./ObjectUtil":139,"./Piece":140,"./PlusOne":142,"./RadialShine":143,"inherits":8,"pixi.js":113,"pixiapp":132,"tween.js":134}],142:[function(require,module,exports){
 PIXI = require("pixi.js");
 var inherits = require("inherits");
 var RadialShine = require("./RadialShine");
@@ -30294,7 +30574,7 @@ PlusOne.prototype.play = function(color) {
 
 	return ThenableUtil.delay(2000);
 }
-},{"./RadialShine":141,"./ThenableUtil":142,"inherits":8,"pixi.js":113,"tween.js":134}],141:[function(require,module,exports){
+},{"./RadialShine":143,"./ThenableUtil":144,"inherits":8,"pixi.js":113,"tween.js":134}],143:[function(require,module,exports){
 var inherits = require('inherits');
 var PIXI = require('pixi.js')
 
@@ -30369,7 +30649,7 @@ RadialShine.prototype.draw = function() {
 
 	this.drawn = true;
 }
-},{"inherits":8,"pixi.js":113}],142:[function(require,module,exports){
+},{"inherits":8,"pixi.js":113}],144:[function(require,module,exports){
 var Thenable = require("tinp");
 
 /**
@@ -30393,4 +30673,4 @@ ThenableUtil.delay = function(millis) {
 
 	return t;
 }
-},{"tinp":133}]},{},[139]);
+},{"tinp":133}]},{},[141]);

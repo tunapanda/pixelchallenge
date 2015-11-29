@@ -8,6 +8,7 @@ var ObjectUtil = require("./ObjectUtil");
 var PlusOne = require("./PlusOne");
 var Bug = require("./Bug");
 var Instructions = require("./Instructions");
+var CountDownText = require("./CountDownText");
 
 function PixelChallenge() {
 	PixiApp.call(this, 800, 600);
@@ -64,6 +65,21 @@ PixelChallenge.prototype.onAssetsLoaded = function() {
 	this.instructions = new Instructions();
 	this.addChild(this.instructions);
 	this.instructions.visible = false;
+
+	var style = {
+		font: "800 100px Sans",
+		fill: "#4040ff"
+	}
+
+	this.countDownText = new CountDownText("%t", style);
+	this.countDownText.visible = false;
+	this.countDownText.x = 400 - this.countDownText.width / 2;
+	this.countDownText.y = 400;
+	this.addChild(this.countDownText);
+
+	this.countDownText.on("complete", function() {
+		this.countDownText.visible = false;
+	}.bind(this));
 }
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
@@ -127,6 +143,15 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 			} else if (el.msRequestFullscreen) {
 				el.msRequestFullscreen();
 			}
+			break;
+
+		case "t":
+			this.countDownText.setTimeLeft(5);
+			this.countDownText.visible = true;
+			break;
+
+		case "u":
+			this.countDownText.visible = false;
 			break;
 	}
 }
