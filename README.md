@@ -24,3 +24,5 @@ The program uses these keys:
 * __B__ - Show bug
 * __I__ - Toggle instructions
 * __F__ - Go fullscreen
+* __T__ - Start 1 minute timer
+* __U__ - Stop timer

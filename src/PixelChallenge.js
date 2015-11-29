@@ -16,6 +16,7 @@ function PixelChallenge() {
 	this.on("frame", TWEEN.update);
 
 	PIXI.loader.add("warning.png");
+	PIXI.loader.add("tunapanda.png");
 	PIXI.loader.load(this.onAssetsLoaded.bind(this));
 }
 
@@ -79,7 +80,33 @@ PixelChallenge.prototype.onAssetsLoaded = function() {
 
 	this.countDownText.on("complete", function() {
 		this.countDownText.visible = false;
+		this.timesUpField.visible = true;
+		setTimeout(function() {
+			this.timesUpField.visible = false;
+		}.bind(this), 5000);
 	}.bind(this));
+
+	this.logo = PIXI.Sprite.fromImage("tunapanda.png");
+	this.logo.x = 400 - this.logo.width / 2;
+	this.logo.y = 30;
+	this.addChild(this.logo);
+
+	var style = {
+		font: "800 150px Sans",
+		dropShadow: true,
+		fill: "#8080ff",
+		dropShadowColor: "#000000",
+		dropShadowDistance: 5,
+		dropShadowAngle: Math.PI / 4,
+		stroke: "#000000",
+		strokeThickness: 5
+	};
+
+	this.timesUpField = new PIXI.Text("TIME'S UP", style);
+	this.addChild(this.timesUpField);
+	this.timesUpField.x = 400 - this.timesUpField.width / 2;
+	this.timesUpField.y = 300 - this.timesUpField.height / 2;
+	this.timesUpField.visible = false;
 }
 
 PixelChallenge.prototype.onKeyPress = function(ev) {
@@ -146,7 +173,7 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 			break;
 
 		case "t":
-			this.countDownText.setTimeLeft(5);
+			this.countDownText.setTimeLeft(60);
 			this.countDownText.visible = true;
 			break;
 

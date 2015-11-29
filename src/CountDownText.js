@@ -88,7 +88,7 @@ CountdownText.prototype.setTimeLeft = function(timeLeft) {
 CountdownText.prototype.onTimerInterval = function() {
 	this.timeLeft--;
 
-	if (this.timeLeft <= 0) {
+	if (this.timeLeft < 0) {
 		clearInterval(this.timerInterval);
 		this.timerInterval = null;
 		this.trigger("complete");
