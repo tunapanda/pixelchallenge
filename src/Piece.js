@@ -43,7 +43,6 @@ Piece.prototype.setPiece = function(index) {
 			"x",
 			"xx"
 		],
-
 		[
 			"x",
 			"xx",
@@ -57,6 +56,9 @@ Piece.prototype.setPiece = function(index) {
 			"xxx",
 			"x  "
 		],
+		[
+			"xx"
+		]
 	];
 
 	if (index < 0)

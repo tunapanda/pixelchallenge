@@ -30234,7 +30234,6 @@ Piece.prototype.setPiece = function(index) {
 			"x",
 			"xx"
 		],
-
 		[
 			"x",
 			"xx",
@@ -30248,6 +30247,9 @@ Piece.prototype.setPiece = function(index) {
 			"xxx",
 			"x  "
 		],
+		[
+			"xx"
+		]
 	];
 
 	if (index < 0)
@@ -30402,6 +30404,11 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 			this.targetPiece = parseInt(String.fromCharCode(ev.charCode));
 			this.count = 100;
 			this.rotate();
+			break;
+
+		case "o":
+			this.piece.visible = true;
+			this.piece.setPiece(8);
 			break;
 
 		case "r":

@@ -129,6 +129,11 @@ PixelChallenge.prototype.onKeyPress = function(ev) {
 			this.rotate();
 			break;
 
+		case "o":
+			this.piece.visible = true;
+			this.piece.setPiece(8);
+			break;
+
 		case "r":
 			this.plusOne.play("red").then(function() {
 				this.redScoreField.text = parseInt(this.redScoreField.text) + 1;
