@@ -26,3 +26,4 @@ The program uses these keys:
 * __F__ - Go fullscreen
 * __T__ - Start 1 minute timer
 * __U__ - Stop timer
+* __O__ - Initial shape
